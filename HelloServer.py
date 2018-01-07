@@ -7,6 +7,8 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 
+messageMemory = []
+
 sampleHtmlForm = '''
             <!DOCTYPE html>
             <title>Message Board</title>
@@ -15,7 +17,11 @@ sampleHtmlForm = '''
                 <br>
                 <button type="submit">Post it!</button>
             </form>
+            <pre>
+                {}
+            </pre>
         '''
+
 
 class HelloHandler(BaseHTTPRequestHandler):
 
@@ -25,7 +31,10 @@ class HelloHandler(BaseHTTPRequestHandler):
     
     def showForm(self):
         # Now, write the response body.
-        self.wfile.write(sampleHtmlForm.encode())
+        # self.wfile.write(sampleHtmlForm.encode())
+        # Send the form with the messages in it.
+        mesg = sampleHtmlForm.format("\n".join(messageMemory))
+        self.wfile.write(mesg.encode())
 
     def do_GET(self):
         # First, send a 200 OK response.
@@ -34,9 +43,6 @@ class HelloHandler(BaseHTTPRequestHandler):
         # Then send headers.
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
-
-        print("Path is " +self.path[1:])
-        
 
         if self.path != '/':
             HelloHandler.processGetResponse(self)
@@ -51,15 +57,21 @@ class HelloHandler(BaseHTTPRequestHandler):
          parsed_data = parse_qs(data)
 
          magic = parsed_data['message'][0]
+
+         messageMemory.append(magic)
+
          # First, send a 200 OK response.
-         self.send_response(200)
+         self.send_response(303)
+        
+         # new_path = '%s'%('/', self.path)
+         self.send_header('Location', '/')
 
          # Then send headers.
-         self.send_header('Content-type', 'text/plain; charset=utf-8')
+         # self.send_header('Content-type', 'text/plain; charset=utf-8')
          self.end_headers()
 
-         # Now, write the response body.
-         self.wfile.write(magic.encode())
+         # # # Now, write the response body.
+         # self.wfile.write(magic.encode())
 
 if __name__ == '__main__':
     server_address = ('', 8000)  # Serve on all addresses, port 8000.
